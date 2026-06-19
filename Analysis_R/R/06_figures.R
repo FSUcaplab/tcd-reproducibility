@@ -38,6 +38,8 @@ fig_label_map <- c(
   DBP = "Diastolic BP",
   HR  = "Heart rate",
   "MCAv mean" = "mean MCAv",
+  "MCAv peak" = "Peak MCAv",
+  "MCAv min"  = "Min MCAv",
   "ET-CO2"    = "ET-CO<sub>2</sub>"
 )
 
@@ -95,26 +97,32 @@ FIGS_ANNOT_SIZE      <- 9 / PT
 FIGS_CAPTION_SIZE    <- 11
 
 # Fig5 - 2 x 3 panel grid
-FIG5_AXIS_TEXT_SIZE  <- 11
-FIG5_AXIS_TITLE_SIZE <- 12
-FIG5_TITLE_SIZE      <- 12
-FIG5_SUPTITLE_SIZE   <- 15
-FIG5_ANNOT_SIZE      <- 8.5 / PT
-FIG5_CAPTION_SIZE    <- 10.5
+FIG5_AXIS_TEXT_SIZE  <- 11 * 1.25
+FIG5_AXIS_TITLE_SIZE <- 12 * 1.25
+FIG5_TITLE_SIZE      <- 12 * 1.25
+FIG5_SUPTITLE_SIZE   <- 15 * 1.25
+FIG5_ANNOT_SIZE      <- (8.5 * 1.25) / PT
+FIG5_TAG_SIZE        <- 12 * 1.25
+FIG5_CAPTION_SIZE    <- 10.5 * 1.25
 
 # Fig1 - 4 x 2 panel grid (CPT time-course)
 FIG1_AXIS_TEXT_SIZE  <- 11
 FIG1_AXIS_TITLE_SIZE <- 12
 FIG1_TITLE_SIZE      <- 13
 FIG1_SUPTITLE_SIZE   <- 16
-FIG1_ANNOT_SIZE      <- 9 / PT
+# In-panel stat annotations (n=, significance stars, ANOVA text) sized to
+# match the axis text so they read consistently with the tick labels.
+FIG1_ANNOT_SIZE      <- FIG1_AXIS_TEXT_SIZE / PT
 
-# Fig2 / Fig3 - 4 x 3 panel grid (Bland-Altman)
-FIG23_AXIS_TEXT_SIZE  <- 8
-FIG23_AXIS_TITLE_SIZE <- 9
-FIG23_TITLE_SIZE      <- 9
-FIG23_SUPTITLE_SIZE   <- 15
-FIG23_ANNOT_SIZE      <- 7 / PT
+# Fig2 / Fig3 / SupFig2 - 4 x 3 panel grid (Bland-Altman). Axis text/suptitle
+# at 125% of the original sizing; panel letters, axis titles, and per-panel
+# titles ("Baseline"/"Minute 1"/"Minute 2") at a further +25% on top of that.
+FIG23_AXIS_TEXT_SIZE  <- 8 * 1.25
+FIG23_AXIS_TITLE_SIZE <- 9 * 1.25 * 1.25
+FIG23_TITLE_SIZE      <- 9 * 1.25 * 1.25
+FIG23_SUPTITLE_SIZE   <- 15 * 1.25
+# n= annotation sized to match the axis text.
+FIG23_ANNOT_SIZE      <- FIG23_AXIS_TEXT_SIZE / PT
 
 # ============================================================
 # Shared helpers
@@ -153,7 +161,11 @@ reliability_y_breaks <- function(y_min, hi = 1.0) {
   step <- if (span <= 1.3) 0.25 else 0.5
   lo_break <- step * ceiling(y_min / step)
   breaks <- seq(lo_break, hi, by = step)
-  sort(unique(c(y_min, breaks)))
+  breaks <- sort(unique(c(y_min, breaks)))
+  if (length(breaks) > 1 && (breaks[2] - breaks[1]) < step / 2) {
+    breaks <- breaks[-2]
+  }
+  breaks
 }
 
 # "n=NN" if n is constant across epochs for this variable, else "n=lo-hi"
@@ -175,13 +187,15 @@ save_fig <- function(plot, name, width, height, config, dpi = 500) {
 
 figure_dims <- list(
   Fig1_CPT_TimeCourse = c(width = 8.6, height = 12.3),
-  Fig2_BA_Cardiovascular = c(width = 8.4, height = 10.1),
-  Fig3_BA_Cerebrovascular = c(width = 8.4, height = 10.1),
+  # Fig2/Fig3/SupFig2 rows taller than before so the larger rotated row
+  # labels have room to center without overlapping the row above.
+  Fig2_BA_Cardiovascular = c(width = 8.4, height = 13.0),
+  Fig3_BA_Cerebrovascular = c(width = 8.4, height = 13.0),
   Fig4_ICC_CCC_Summary = c(width = 7.7, height = 10.4),
   Fig5_ICC_CCC_Sex_Menstrual = c(width = 12.8, height = 9.0),
   Fig6_ICC_CCC_Exclude_Unmatched_Females = c(width = 7.7, height = 10.4),
   SupFig1_ICC_CCC_AllVars        = c(width = 10.5, height = 9.5),
-  SupFig2_BA_MCAv_CVRi_SmO2     = c(width = 8.4,  height = 10.1)
+  SupFig2_BA_MCAv_CVRi_SmO2     = c(width = 8.4,  height = 13.0)
 )
 
 # ============================================================
@@ -275,6 +289,7 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
                                           point_size = 2.2,
                                           line_width = 0.8,
                                           show_n_in_legend = TRUE,
+                                          capitalize_mean_mcav = FALSE,
                                           caption = NULL,
                                           caption_size = 10) {
   var_order <- bp_first_order(vars$label)
@@ -298,13 +313,17 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
   color_values <- setNames(style$color, var_order)
   shape_values <- setNames(style$shape, var_order)
   lty_values   <- setNames(style$linetype, var_order)
+  display_labels <- fig_display_label(var_order)
+  if (capitalize_mean_mcav) {
+    display_labels[display_labels == "mean MCAv"] <- "Mean MCAv"
+  }
   legend_labels <- if (show_n_in_legend) {
     setNames(
-      paste0(fig_display_label(var_order), "  (", vapply(var_order, function(v) n_label(stats_df, v), character(1)), ")"),
+      paste0(display_labels, "  (", vapply(var_order, function(v) n_label(stats_df, v), character(1)), ")"),
       var_order
     )
   } else {
-    setNames(fig_display_label(var_order), var_order)
+    setNames(display_labels, var_order)
   }
 
   x_lim <- c(0.5, 3.5)
@@ -348,8 +367,8 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
     p
   }
 
-  p_icc <- build_panel("ICC3k", "A. ICC(3,k) [95% CI] (Koo & Li, 2016)", show_x_axis = FALSE)
-  p_ccc <- build_panel("CCC", "B. Lin's CCC (Akoglu, 2018)", show_x_axis = TRUE)
+  p_icc <- build_panel("ICC3k", "A. ICC(3,k) [95% CI]", show_x_axis = FALSE)
+  p_ccc <- build_panel("CCC", "B. Lin's CCC", show_x_axis = TRUE)
 
   combined <- (p_icc / p_ccc) +
     patchwork::plot_layout(guides = "collect") +
@@ -421,7 +440,9 @@ build_fig5_gg <- function(sex_df, vars,
   color_values <- setNames(style$color, var_order)
   shape_values <- setNames(style$shape, var_order)
   lty_values   <- setNames(style$linetype, var_order)
-  legend_labels <- setNames(fig_display_label(var_order), var_order)
+  display_labels <- fig_display_label(var_order)
+  display_labels[display_labels == "mean MCAv"] <- "Mean MCAv"
+  legend_labels <- setNames(display_labels, var_order)
 
   x_lim <- c(0.5, 3.5)
   label_x <- 3.45
@@ -495,11 +516,11 @@ build_fig5_gg <- function(sex_df, vars,
     patchwork::plot_annotation(
       title = "Reliability by sex and menstrual-cycle matching",
       tag_levels = "A",
-      caption = "ICC and CCC represent agreement between Visit 1 and Visit 2. Negative reliability point estimates are shown; extremely wide ICC confidence intervals are clipped at the axis limit.",
+      caption = "Negative reliability point estimates are shown; extremely wide ICC confidence intervals are clipped at the axis limit.",
       theme = theme(
         plot.title = element_text(size = suptitle_size, face = "bold", hjust = 0.5),
         plot.caption = element_text(size = caption_size, color = "#555555", hjust = 0),
-        plot.tag = element_text(face = "bold")
+        plot.tag = element_text(size = FIG5_TAG_SIZE, face = "bold")
       )
     )
   combined & theme(legend.position = "bottom")
@@ -766,7 +787,9 @@ build_ba_panel <- function(dp, panel_title, y_breaks, row_label = NULL, show_x_t
 build_ba_grid_gg <- function(df, vars_df, title,
                               theme_spec = fig23_theme,
                               annot_size = FIG23_ANNOT_SIZE,
-                              suptitle_size = FIG23_SUPTITLE_SIZE) {
+                              suptitle_size = FIG23_SUPTITLE_SIZE,
+                              tag_size = FIG23_TITLE_SIZE,
+                              capitalize_mean_mcav = FALSE) {
   ba_epoch_label <- c(Base = "Baseline", `1min` = "Minute 1", `2min` = "Minute 2")
   var_order <- bp_first_order(vars_df$label)
   ordered_vars <- vars_df[match(var_order, vars_df$label), ]
@@ -788,8 +811,14 @@ build_ba_grid_gg <- function(df, vars_df, title,
     }
     yb <- nice_breaks(min(y_vals), max(y_vals), n = 5)
 
-    units_str <- if (nchar(var$units) > 0 && var$units != "ratio") paste0(" (", var$units, ")") else ""
-    row_label <- paste0(fig_display_label(var$label), units_str, "\nV1 - V2")
+    units_line <- if (nchar(var$units) > 0 && var$units != "ratio") paste0("(", var$units, ")") else NULL
+    display_label <- fig_display_label(var$label)
+    if (capitalize_mean_mcav && identical(display_label, "mean MCAv")) {
+      display_label <- "Mean MCAv"
+    }
+    # Units get their own line so the rotated row label (which grows with the
+    # 25% panel-title/axis-title bump) doesn't overflow into the row above.
+    row_label <- paste(c(display_label, units_line, "V1 - V2"), collapse = "\n")
 
     for (j in seq_along(epochs)) {
       panel_title <- unname(ba_epoch_label[epochs[j]])
@@ -808,7 +837,7 @@ build_ba_grid_gg <- function(df, vars_df, title,
       title = title, tag_levels = "A",
       theme = theme(
         plot.title = element_text(size = suptitle_size, face = "bold", hjust = 0.5),
-        plot.tag = element_text(face = "bold")
+        plot.tag = element_text(size = tag_size, face = "bold")
       )
     )
 }
@@ -832,16 +861,21 @@ render_all_figures_r <- function(df, config) {
   save1(build_ba_grid_gg(df, fig2_fig3_vars[1:4, ], "Bland-Altman plots: cardiovascular variables"),
         "Fig2_BA_Cardiovascular")
 
-  save1(build_ba_grid_gg(df, fig2_fig3_vars[5:8, ], "Bland-Altman plots: cerebrovascular variables"),
+  save1(build_ba_grid_gg(
+          df, fig2_fig3_vars[5:8, ], "Bland-Altman plots: cerebrovascular variables",
+          capitalize_mean_mcav = TRUE
+        ),
         "Fig3_BA_Cerebrovascular")
 
   save1(build_reliability_summary_gg(stats_df, fig2_fig3_vars, "ICC and CCC by epoch", y_min = -0.10,
+                                      capitalize_mean_mcav = TRUE,
                                       caption = "ICC and CCC represent agreement between Visit 1 and Visit 2."),
         "Fig4_ICC_CCC_Summary")
 
   save1(build_fig5_gg(sex_df, fig2_fig3_vars), "Fig5_ICC_CCC_Sex_Menstrual")
 
   save1(build_reliability_summary_gg(fig6_df, fig2_fig3_vars, "ICC and CCC by epoch: unmatched females excluded", y_min = -0.10,
+                                      capitalize_mean_mcav = TRUE,
                                       caption = "ICC and CCC represent agreement between Visit 1 and Visit 2."),
         "Fig6_ICC_CCC_Exclude_Unmatched_Females")
 
@@ -851,7 +885,8 @@ render_all_figures_r <- function(df, config) {
       theme_spec = figs_theme, annot_size = FIGS_ANNOT_SIZE, suptitle_size = FIGS_SUPTITLE_SIZE,
       legend_ncol = 5, offset_step = 0.045, point_size = 1.8, line_width = 0.6,
       show_n_in_legend = FALSE,
-      caption = "ICC and CCC represent agreement between Visit 1 and Visit 2. n = 41–49 depending on variable and epoch; see Table 2 and Table 3 for per-variable n.",
+      capitalize_mean_mcav = TRUE,
+      caption = "n = 41–49 depending on variable and epoch; see Table 2 and Table 3 for per-variable n.",
       caption_size = FIGS_CAPTION_SIZE
     ),
     "SupFig1_ICC_CCC_AllVars"
