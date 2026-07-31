@@ -5,8 +5,8 @@ type: software
 authors:
   - family-names: Hoch
     given-names: "Jonathan W."
-repository-code: "https://github.com/Jonathan-Hoch/analysis-TCDreproducibility"
-url: "https://github.com/Jonathan-Hoch/analysis-TCDreproducibility"
+repository-code: "https://github.com/FSUcaplab/analysis-TCDreproducibility"
+url: "https://github.com/FSUcaplab/analysis-TCDreproducibility"
 license: MIT
 date-released: 2026-06-12
 abstract: >-
@@ -26,19 +26,19 @@ preferred-citation:
     Reactivity During the Cold Pressor Test
   authors:
     - family-names: Vondrasek
-      given-names: "John D."
+      given-names: "Joseph D."
     - family-names: Hoch
       given-names: "Jonathan W."
     - family-names: Huang
-      given-names: "M."
+      given-names: "Mu"
     - family-names: Belval
-      given-names: "Lauren N."
+      given-names: "Luke N."
     - family-names: Jarrard
-      given-names: "Craig P."
+      given-names: "Caitlin P."
     - family-names: Crandall
       given-names: "Craig G."
     - family-names: Watso
-      given-names: "J. Carter"
+      given-names: "Joseph C."
   journal: "American Journal of Physiology-Heart and Circulatory Physiology"
   year: 2026
   notes: "Manuscript under review."

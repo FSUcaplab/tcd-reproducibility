@@ -40,7 +40,10 @@ fig_label_map <- c(
   "MCAv mean" = "mean MCAv",
   "MCAv peak" = "Peak MCAv",
   "MCAv min"  = "Min MCAv",
-  "ET-CO2"    = "ET-CO<sub>2</sub>"
+  "ET-CO2"    = "ET-CO<sub>2</sub>",
+  # SmO2 join key retained in data/CSVs, but "m" (muscle) is incorrect for this
+  # cerebral measure: display as ScO2 (cerebral oxygen saturation) in all figures.
+  SmO2        = "ScO<sub>2</sub>"
 )
 
 fig_display_label <- function(x) {
@@ -294,6 +297,10 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
                                           caption_size = 10) {
   var_order <- bp_first_order(vars$label)
   epoch_levels <- c("Baseline", "Min 1", "Min 2")
+  # Baseline point = reliability of absolute resting values; Min 1/Min 2 points =
+  # reliability of the change from baseline (Δ). Mark the deltas on the x-axis so
+  # the mixed absolute/Δ axis is not misread as all-absolute.
+  epoch_display <- c("Baseline", "ΔMin 1", "ΔMin 2")
 
   pd <- stats_df %>%
     dplyr::filter(Variable %in% var_order) %>%
@@ -351,7 +358,7 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
       scale_color_manual(values = color_values, labels = legend_labels, breaks = var_order, name = NULL) +
       scale_shape_manual(values = shape_values, labels = legend_labels, breaks = var_order, name = NULL) +
       scale_linetype_manual(values = lty_values, labels = legend_labels, breaks = var_order, name = NULL) +
-      scale_x_continuous(breaks = 1:3, labels = epoch_levels, limits = x_lim, expand = expansion(add = c(0, 0))) +
+      scale_x_continuous(breaks = 1:3, labels = epoch_display, limits = x_lim, expand = expansion(add = c(0, 0))) +
       scale_y_continuous(breaks = y_breaks, limits = c(y_min, 1.0), expand = expansion(add = c(0, 0))) +
       coord_cartesian(clip = "off") +
       labs(y = if (stat == "ICC3k") "ICC(3,k)" else "CCC", title = panel_title) +
@@ -416,6 +423,7 @@ build_fig5_gg <- function(sex_df, vars,
                            caption_size = FIG5_CAPTION_SIZE) {
   var_order <- bp_first_order(vars$label)
   epoch_levels <- c("Baseline", "Min 1", "Min 2")
+  epoch_display <- c("Baseline", "ΔMin 1", "ΔMin 2")  # Min 1/Min 2 are Δ from baseline
   groups <- c("Male", "Female matched", "Female unmatched")
 
   point_min <- min(sex_df$ICC3k, sex_df$CCC, -0.10, na.rm = TRUE)
@@ -475,7 +483,7 @@ build_fig5_gg <- function(sex_df, vars,
       scale_color_manual(values = color_values, labels = legend_labels, breaks = var_order, name = NULL) +
       scale_shape_manual(values = shape_values, labels = legend_labels, breaks = var_order, name = NULL) +
       scale_linetype_manual(values = lty_values, labels = legend_labels, breaks = var_order, name = NULL) +
-      scale_x_continuous(breaks = 1:3, labels = epoch_levels, limits = x_lim, expand = expansion(add = c(0, 0))) +
+      scale_x_continuous(breaks = 1:3, labels = epoch_display, limits = x_lim, expand = expansion(add = c(0, 0))) +
       scale_y_continuous(breaks = y_breaks, limits = c(y_min, 1.0), expand = expansion(add = c(0, 0))) +
       coord_cartesian(clip = "off") +
       labs(
@@ -790,7 +798,7 @@ build_ba_grid_gg <- function(df, vars_df, title,
                               suptitle_size = FIG23_SUPTITLE_SIZE,
                               tag_size = FIG23_TITLE_SIZE,
                               capitalize_mean_mcav = FALSE) {
-  ba_epoch_label <- c(Base = "Baseline", `1min` = "Minute 1", `2min` = "Minute 2")
+  ba_epoch_label <- c(Base = "Baseline", `1min` = "Minute 1 Δ", `2min` = "Minute 2 Δ")
   var_order <- bp_first_order(vars_df$label)
   ordered_vars <- vars_df[match(var_order, vars_df$label), ]
 
@@ -836,7 +844,7 @@ build_ba_grid_gg <- function(df, vars_df, title,
     patchwork::plot_annotation(
       title = title, tag_levels = "A",
       theme = theme(
-        plot.title = element_text(size = suptitle_size, face = "bold", hjust = 0.5),
+        plot.title = element_markdown(size = suptitle_size, face = "bold", hjust = 0.5),
         plot.tag = element_text(size = tag_size, face = "bold")
       )
     )
@@ -900,7 +908,7 @@ render_all_figures_r <- function(df, config) {
     "smo2",      "SmO2",           "SmO2",       "%"
   )
   save1(build_ba_grid_gg(df, sup2_vars,
-                         "Bland-Altman plots: MCAv peak, MCAv min, CVRi, and SmO2"),
+                         "Bland-Altman plots: MCAv peak, MCAv min, CVRi, and ScO<sub>2</sub>"),
         "SupFig2_BA_MCAv_CVRi_SmO2")
 
   invisible(NULL)
