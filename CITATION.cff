@@ -5,9 +5,12 @@ type: software
 authors:
   - family-names: Hoch
     given-names: "Jonathan W."
+    orcid: "https://orcid.org/0000-0002-4992-1199"
+    affiliation: "Cardiovascular and Applied Physiology Laboratory, Florida State University"
 repository-code: "https://github.com/FSUcaplab/analysis-TCDreproducibility"
 url: "https://github.com/FSUcaplab/analysis-TCDreproducibility"
 license: MIT
+version: 1.0.0
 date-released: 2026-06-12
 abstract: >-
   Reproducible analysis code and generated manuscript-ready outputs for
@@ -29,6 +32,7 @@ preferred-citation:
       given-names: "Joseph D."
     - family-names: Hoch
       given-names: "Jonathan W."
+      orcid: "https://orcid.org/0000-0002-4992-1199"
     - family-names: Huang
       given-names: "Mu"
     - family-names: Belval
@@ -39,6 +43,7 @@ preferred-citation:
       given-names: "Craig G."
     - family-names: Watso
       given-names: "Joseph C."
+      orcid: "https://orcid.org/0000-0001-7840-0643"
   journal: "American Journal of Physiology-Heart and Circulatory Physiology"
   year: 2026
   notes: "Manuscript under review."

@@ -1,0 +1,31 @@
+TY  - JOUR
+TI  - Between-visit Reproducibility of Cerebrovascular and Cardiovascular Reactivity During the Cold Pressor Test
+AU  - Vondrasek, Joseph D.
+AU  - Hoch, Jonathan W.
+AU  - Huang, Mu
+AU  - Belval, Luke N.
+AU  - Jarrard, Caitlin P.
+AU  - Crandall, Craig G.
+AU  - Watso, Joseph C.
+T2  - American Journal of Physiology-Heart and Circulatory Physiology
+PY  - 2026
+N1  - Manuscript under review.
+LA  - eng
+ER  - 
+
+TY  - COMP
+TI  - TCD Reproducibility Analysis
+AU  - Hoch, Jonathan W.
+PY  - 2026
+DA  - 2026/06/12/
+ET  - 1.0.0
+UR  - https://github.com/FSUcaplab/analysis-TCDreproducibility
+AB  - Reproducible analysis code and generated manuscript-ready outputs for evaluating between-visit reproducibility of cerebrovascular and cardiovascular responses during the cold pressor test.
+KW  - cerebrovascular reactivity
+KW  - cardiovascular reactivity
+KW  - cold pressor test
+KW  - reproducibility
+KW  - reliability
+N1  - License: MIT
+LA  - eng
+ER  - 
