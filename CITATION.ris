@@ -17,8 +17,9 @@ TY  - COMP
 TI  - TCD Reproducibility Analysis
 AU  - Hoch, Jonathan W.
 PY  - 2026
-DA  - 2026/06/12/
+DA  - 2026/06/17/
 ET  - 1.0.0
+DO  - 10.5281/zenodo.20747866
 UR  - https://github.com/FSUcaplab/analysis-TCDreproducibility
 AB  - Reproducible analysis code and generated manuscript-ready outputs for evaluating between-visit reproducibility of cerebrovascular and cardiovascular responses during the cold pressor test.
 KW  - cerebrovascular reactivity

@@ -11,7 +11,15 @@ repository-code: "https://github.com/FSUcaplab/analysis-TCDreproducibility"
 url: "https://github.com/FSUcaplab/analysis-TCDreproducibility"
 license: MIT
 version: 1.0.0
-date-released: 2026-06-12
+date-released: 2026-06-17
+doi: "10.5281/zenodo.20747866"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20747866"
+    description: "Concept DOI -- always resolves to the latest archived version. Cite this one."
+  - type: doi
+    value: "10.5281/zenodo.20747867"
+    description: "Version DOI -- the archived v1.0.0 snapshot."
 abstract: >-
   Reproducible analysis code and generated manuscript-ready outputs for
   evaluating between-visit reproducibility of cerebrovascular and
