@@ -7,8 +7,8 @@ authors:
     given-names: "Jonathan W."
     orcid: "https://orcid.org/0000-0002-4992-1199"
     affiliation: "Cardiovascular and Applied Physiology Laboratory, Florida State University"
-repository-code: "https://github.com/FSUcaplab/analysis-TCDreproducibility"
-url: "https://github.com/FSUcaplab/analysis-TCDreproducibility"
+repository-code: "https://github.com/FSUcaplab/tcd_reproducibility"
+url: "https://github.com/FSUcaplab/tcd_reproducibility"
 license: MIT
 version: 1.0.0
 date-released: 2026-06-17
