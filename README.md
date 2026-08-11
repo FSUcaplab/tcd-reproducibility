@@ -104,8 +104,8 @@ The main workbook is expected to contain participant identifiers, subject IDs, s
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Jonathan-Hoch/analysis-TCDreproducibility.git
-cd analysis-TCDreproducibility
+git clone https://github.com/FSUcaplab/tcd-reproducibility.git
+cd tcd-reproducibility
 ```
 
 ### 2. Install Python dependencies
