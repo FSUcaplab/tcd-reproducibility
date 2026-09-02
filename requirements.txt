@@ -1,7 +1,0 @@
-﻿matplotlib
-numpy
-openpyxl
-pandas
-pingouin
-scipy
-statsmodels

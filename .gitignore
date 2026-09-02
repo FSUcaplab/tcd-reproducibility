@@ -1,10 +1,16 @@
-﻿# Raw/private data
+# Raw/private participant data
 /data/raw/*
 !/data/raw/.gitkeep
 ACQ files/
 *.acq
 *.xlsx
 *.xls
+
+# Rendered figures. The tables in Analysis_R/outputs/ are committed because
+# they are the manuscript's numbers; the figures are large binaries that
+# run_step_06 regenerates from them.
+Analysis_R/outputs/*.png
+Analysis_R/outputs/*.pdf
 
 # Large local exports and caches
 acq_text_exports/
@@ -13,6 +19,11 @@ acq_metadata_exports/
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
+
+# R session artefacts
+.Rhistory
+.RData
+.Rproj.user/
 
 # Local environment/config
 .env

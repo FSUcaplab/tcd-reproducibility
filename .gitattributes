@@ -1,0 +1,17 @@
+# Normalise line endings to LF in the repository and check them out in the
+# platform's own convention.
+#
+# This matters here: R writes platform-native line endings, and
+# tests/test_outputs.R compares regenerated CSVs against the committed ones
+# byte-for-byte. Without this, the test outcome would depend on each
+# contributor's core.autocrlf setting rather than on the numbers.
+* text=auto
+
+*.R   text
+*.csv text
+*.md  text
+*.cff text
+
+*.png binary
+*.pdf binary
+*.xlsx binary
