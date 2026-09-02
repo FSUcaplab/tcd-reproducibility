@@ -205,41 +205,52 @@ figure_dims <- list(
 # Fig4 / Fig6 - ICC / CCC reliability summary (2 stacked panels)
 # ============================================================
 
-fig4_theme <- theme_classic(base_size = FIG4_AXIS_TEXT_SIZE) +
-  theme(
-    text = element_text(color = COL_TEXT),
-    axis.title.x = element_markdown(size = FIG4_AXIS_TITLE_SIZE, color = COL_TEXT),
-    axis.title.y = element_markdown(size = FIG4_AXIS_TITLE_SIZE, color = COL_TEXT, angle = 90),
-    axis.text = element_text(size = FIG4_AXIS_TEXT_SIZE, color = COL_TEXT),
-    axis.line = element_line(linewidth = 0.6, color = COL_TEXT),
-    axis.ticks = element_line(linewidth = 0.5, color = COL_TEXT),
-    plot.title = element_text(size = FIG4_TITLE_SIZE, face = "bold", hjust = 0),
-    panel.grid = element_blank(),
-    plot.background = element_rect(fill = "white", color = NA),
-    panel.background = element_rect(fill = "white", color = NA),
-    legend.text = element_markdown(size = FIG4_AXIS_TEXT_SIZE),
-    legend.title = element_blank(),
-    legend.key.width = unit(1.6, "lines"),
-    plot.margin = margin(t = 6, r = 14, b = 4, l = 6)
-  )
+# Every figure uses the same classic base: white background, no grid, garnet-
+# on-white text, markdown axis titles (so ET-CO<sub>2</sub> renders). The
+# figures differ only in type sizes, rule weights, legend treatment and
+# margins, so they are built from one factory rather than five near-copies.
+fsu_theme <- function(axis_text, axis_title, title,
+                      base_size = axis_text,
+                      line_width = 0.6, tick_width = 0.5,
+                      title_element = element_text, title_hjust = 0,
+                      legend_text = NULL, legend_key_width = NULL,
+                      margins = c(t = 6, r = 14, b = 4, l = 6)) {
+  out <- theme_classic(base_size = base_size) +
+    theme(
+      text = element_text(color = COL_TEXT),
+      axis.title.x = element_markdown(size = axis_title, color = COL_TEXT),
+      axis.title.y = element_markdown(size = axis_title, color = COL_TEXT, angle = 90),
+      axis.text = element_text(size = axis_text, color = COL_TEXT),
+      axis.line = element_line(linewidth = line_width, color = COL_TEXT),
+      axis.ticks = element_line(linewidth = tick_width, color = COL_TEXT),
+      plot.title = title_element(size = title, face = "bold", hjust = title_hjust),
+      panel.grid = element_blank(),
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA),
+      plot.margin = margin(t = margins[["t"]], r = margins[["r"]],
+                           b = margins[["b"]], l = margins[["l"]])
+    )
 
-figs_theme <- theme_classic(base_size = FIGS_AXIS_TEXT_SIZE) +
-  theme(
-    text = element_text(color = COL_TEXT),
-    axis.title.x = element_markdown(size = FIGS_AXIS_TITLE_SIZE, color = COL_TEXT),
-    axis.title.y = element_markdown(size = FIGS_AXIS_TITLE_SIZE, color = COL_TEXT, angle = 90),
-    axis.text = element_text(size = FIGS_AXIS_TEXT_SIZE, color = COL_TEXT),
-    axis.line = element_line(linewidth = 0.6, color = COL_TEXT),
-    axis.ticks = element_line(linewidth = 0.5, color = COL_TEXT),
-    plot.title = element_text(size = FIGS_TITLE_SIZE, face = "bold", hjust = 0),
-    panel.grid = element_blank(),
-    plot.background = element_rect(fill = "white", color = NA),
-    panel.background = element_rect(fill = "white", color = NA),
-    legend.text = element_markdown(size = FIGS_AXIS_TEXT_SIZE),
-    legend.title = element_blank(),
-    legend.key.width = unit(1.4, "lines"),
-    plot.margin = margin(t = 6, r = 18, b = 4, l = 6)
-  )
+  if (!is.null(legend_text)) {
+    out <- out + theme(legend.text = legend_text, legend.title = element_blank())
+  }
+  if (!is.null(legend_key_width)) {
+    out <- out + theme(legend.key.width = unit(legend_key_width, "lines"))
+  }
+  out
+}
+
+fig4_theme <- fsu_theme(
+  axis_text = FIG4_AXIS_TEXT_SIZE, axis_title = FIG4_AXIS_TITLE_SIZE, title = FIG4_TITLE_SIZE,
+  legend_text = element_markdown(size = FIG4_AXIS_TEXT_SIZE), legend_key_width = 1.6,
+  margins = c(t = 6, r = 14, b = 4, l = 6)
+)
+
+figs_theme <- fsu_theme(
+  axis_text = FIGS_AXIS_TEXT_SIZE, axis_title = FIGS_AXIS_TITLE_SIZE, title = FIGS_TITLE_SIZE,
+  legend_text = element_markdown(size = FIGS_AXIS_TEXT_SIZE), legend_key_width = 1.4,
+  margins = c(t = 6, r = 18, b = 4, l = 6)
+)
 
 # Reliability interpretation bands (Poor/Moderate/.../Excellent for ICC,
 # Poor/Fair/.../Very Strong for CCC) as background rects + right-edge labels,
@@ -282,6 +293,73 @@ reliability_bands <- function(stat, y_min, x_min, x_max, label_x, annot_size = F
   )
 }
 
+EPOCH_LEVELS <- c("Baseline", "Min 1", "Min 2")
+# Minutes 1 and 2 are deltas from baseline; mark them so the mixed
+# absolute/delta x-axis is not misread as all-absolute.
+EPOCH_DISPLAY <- c("Baseline", "ΔMin 1", "ΔMin 2")
+PANEL_X_LIM <- c(0.5, 3.5)
+BAND_LABEL_X <- 3.45
+
+# Shared preparation for every ICC/CCC panel figure (Fig4, Fig5, Fig6, SupFig1):
+# variable ordering, the x offsets that fan variables out within each epoch,
+# CI bounds clipped to the panel, and the per-variable colour/shape/linetype
+# scales. Returns the plotting frame plus the scales keyed by variable.
+reliability_panel_data <- function(stats_df, vars, y_min, offset_step) {
+  var_order <- bp_first_order(vars$label)
+
+  pd <- stats_df %>%
+    dplyr::filter(Variable %in% var_order) %>%
+    dplyr::mutate(
+      Variable = factor(Variable, levels = var_order),
+      Epoch = factor(Epoch, levels = EPOCH_LEVELS),
+      epoch_idx = as.numeric(Epoch)
+    )
+
+  n_vars <- length(var_order)
+  offsets <- (seq_len(n_vars) - (n_vars + 1) / 2) * offset_step
+  pd$x_pos <- pd$epoch_idx + offsets[as.integer(pd$Variable)]
+  pd$ICC3k_lo_clip <- pmax(pd$ICC3k_lo, y_min)
+  pd$ICC3k_hi_clip <- pmin(pd$ICC3k_hi, 1.0)
+
+  style <- all_rel_styles[match(var_order, all_rel_styles$Variable), ]
+
+  list(
+    var_order = var_order,
+    pd        = pd,
+    color     = setNames(style$color, var_order),
+    shape     = setNames(style$shape, var_order),
+    linetype  = setNames(style$linetype, var_order),
+    y_breaks  = reliability_y_breaks(y_min)
+  )
+}
+
+# The scales, axes and legend shared by every ICC/CCC panel.
+reliability_panel_scales <- function(prep, legend_labels, legend_ncol, y_min) {
+  list(
+    scale_color_manual(values = prep$color, labels = legend_labels, breaks = prep$var_order, name = NULL),
+    scale_shape_manual(values = prep$shape, labels = legend_labels, breaks = prep$var_order, name = NULL),
+    scale_linetype_manual(values = prep$linetype, labels = legend_labels, breaks = prep$var_order, name = NULL),
+    scale_x_continuous(breaks = 1:3, labels = EPOCH_DISPLAY, limits = PANEL_X_LIM,
+                       expand = expansion(add = c(0, 0))),
+    scale_y_continuous(breaks = prep$y_breaks, limits = c(y_min, 1.0),
+                       expand = expansion(add = c(0, 0))),
+    coord_cartesian(clip = "off"),
+    guides(color = guide_legend(ncol = legend_ncol),
+           shape = guide_legend(ncol = legend_ncol),
+           linetype = guide_legend(ncol = legend_ncol))
+  )
+}
+
+# Hide the x-axis on upper panels; the axis title is never shown.
+panel_axis_theme <- function(show_x_axis) {
+  if (show_x_axis) {
+    theme(axis.title.x = element_blank())
+  } else {
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+          axis.title.x = element_blank())
+  }
+}
+
 # Builds the 2-panel (ICC top, CCC bottom) patchwork used by Fig4, Fig6, and SupFig.
 build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
                                           theme_spec = fig4_theme,
@@ -295,31 +373,10 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
                                           capitalize_mean_mcav = FALSE,
                                           caption = NULL,
                                           caption_size = 10) {
-  var_order <- bp_first_order(vars$label)
-  epoch_levels <- c("Baseline", "Min 1", "Min 2")
-  # Baseline point = reliability of absolute resting values; Min 1/Min 2 points =
-  # reliability of the change from baseline (Δ). Mark the deltas on the x-axis so
-  # the mixed absolute/Δ axis is not misread as all-absolute.
-  epoch_display <- c("Baseline", "ΔMin 1", "ΔMin 2")
+  prep <- reliability_panel_data(stats_df, vars, y_min, offset_step)
+  var_order <- prep$var_order
+  pd <- prep$pd
 
-  pd <- stats_df %>%
-    dplyr::filter(Variable %in% var_order) %>%
-    dplyr::mutate(
-      Variable = factor(Variable, levels = var_order),
-      Epoch = factor(Epoch, levels = epoch_levels),
-      epoch_idx = as.numeric(Epoch)
-    )
-
-  n_vars <- length(var_order)
-  offsets <- (seq_len(n_vars) - (n_vars + 1) / 2) * offset_step
-  pd$x_pos <- pd$epoch_idx + offsets[as.integer(pd$Variable)]
-  pd$ICC3k_lo_clip <- pmax(pd$ICC3k_lo, y_min)
-  pd$ICC3k_hi_clip <- pmin(pd$ICC3k_hi, 1.0)
-
-  style <- all_rel_styles[match(var_order, all_rel_styles$Variable), ]
-  color_values <- setNames(style$color, var_order)
-  shape_values <- setNames(style$shape, var_order)
-  lty_values   <- setNames(style$linetype, var_order)
   display_labels <- fig_display_label(var_order)
   if (capitalize_mean_mcav) {
     display_labels[display_labels == "mean MCAv"] <- "Mean MCAv"
@@ -333,15 +390,11 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
     setNames(display_labels, var_order)
   }
 
-  x_lim <- c(0.5, 3.5)
-  label_x <- 3.45
-  y_breaks <- reliability_y_breaks(y_min)
-
   build_panel <- function(stat, panel_title, show_x_axis) {
     p <- ggplot(pd, aes(x = x_pos, y = .data[[stat]], color = Variable, shape = Variable,
                         linetype = Variable, group = Variable))
 
-    for (layer in reliability_bands(stat, y_min, x_lim[1], x_lim[2], label_x, annot_size)) {
+    for (layer in reliability_bands(stat, y_min, PANEL_X_LIM[1], PANEL_X_LIM[2], BAND_LABEL_X, annot_size)) {
       p <- p + layer
     }
 
@@ -352,26 +405,13 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
                               width = 0.05, linetype = 1, alpha = 0.45, show.legend = FALSE)
     }
 
-    p <- p +
+    p +
       geom_line(linewidth = line_width) +
       geom_point(size = point_size, stroke = 0.8) +
-      scale_color_manual(values = color_values, labels = legend_labels, breaks = var_order, name = NULL) +
-      scale_shape_manual(values = shape_values, labels = legend_labels, breaks = var_order, name = NULL) +
-      scale_linetype_manual(values = lty_values, labels = legend_labels, breaks = var_order, name = NULL) +
-      scale_x_continuous(breaks = 1:3, labels = epoch_display, limits = x_lim, expand = expansion(add = c(0, 0))) +
-      scale_y_continuous(breaks = y_breaks, limits = c(y_min, 1.0), expand = expansion(add = c(0, 0))) +
-      coord_cartesian(clip = "off") +
+      reliability_panel_scales(prep, legend_labels, legend_ncol, y_min) +
       labs(y = if (stat == "ICC3k") "ICC(3,k)" else "CCC", title = panel_title) +
-      guides(color = guide_legend(ncol = legend_ncol), shape = guide_legend(ncol = legend_ncol),
-             linetype = guide_legend(ncol = legend_ncol)) +
-      theme_spec
-
-    if (!show_x_axis) {
-      p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.title.x = element_blank())
-    } else {
-      p <- p + theme(axis.title.x = element_blank())
-    }
-    p
+      theme_spec +
+      panel_axis_theme(show_x_axis)
   }
 
   p_icc <- build_panel("ICC3k", "A. ICC(3,k) [95% CI]", show_x_axis = FALSE)
@@ -394,23 +434,12 @@ build_reliability_summary_gg <- function(stats_df, vars, title, y_min = -0.10,
 # Fig5 - reliability by sex / menstrual-cycle matching (2 x 3 panel grid)
 # ============================================================
 
-fig5_theme <- theme_classic(base_size = FIG5_AXIS_TEXT_SIZE) +
-  theme(
-    text = element_text(color = COL_TEXT),
-    axis.title.x = element_markdown(size = FIG5_AXIS_TITLE_SIZE, color = COL_TEXT),
-    axis.title.y = element_markdown(size = FIG5_AXIS_TITLE_SIZE, color = COL_TEXT, angle = 90),
-    axis.text = element_text(size = FIG5_AXIS_TEXT_SIZE, color = COL_TEXT),
-    axis.line = element_line(linewidth = 0.5, color = COL_TEXT),
-    axis.ticks = element_line(linewidth = 0.4, color = COL_TEXT),
-    plot.title = element_text(size = FIG5_TITLE_SIZE, face = "bold", hjust = 0),
-    panel.grid = element_blank(),
-    plot.background = element_rect(fill = "white", color = NA),
-    panel.background = element_rect(fill = "white", color = NA),
-    legend.text = element_markdown(size = FIG5_AXIS_TEXT_SIZE),
-    legend.title = element_blank(),
-    legend.key.width = unit(1.3, "lines"),
-    plot.margin = margin(t = 4, r = 10, b = 2, l = 4)
-  )
+fig5_theme <- fsu_theme(
+  axis_text = FIG5_AXIS_TEXT_SIZE, axis_title = FIG5_AXIS_TITLE_SIZE, title = FIG5_TITLE_SIZE,
+  line_width = 0.5, tick_width = 0.4,
+  legend_text = element_markdown(size = FIG5_AXIS_TEXT_SIZE), legend_key_width = 1.3,
+  margins = c(t = 4, r = 10, b = 2, l = 4)
+)
 
 build_fig5_gg <- function(sex_df, vars,
                            theme_spec = fig5_theme,
@@ -421,52 +450,34 @@ build_fig5_gg <- function(sex_df, vars,
                            point_size = 1.6,
                            line_width = 0.6,
                            caption_size = FIG5_CAPTION_SIZE) {
-  var_order <- bp_first_order(vars$label)
-  epoch_levels <- c("Baseline", "Min 1", "Min 2")
-  epoch_display <- c("Baseline", "ΔMin 1", "ΔMin 2")  # Min 1/Min 2 are Δ from baseline
-  groups <- c("Male", "Female matched", "Female unmatched")
+  groups <- SEX_GROUPS
 
+  # Group ICCs can fall well below zero, so the floor follows the data
+  # (down to -1.40) rather than sitting at the -0.10 used elsewhere.
   point_min <- min(sex_df$ICC3k, sex_df$CCC, -0.10, na.rm = TRUE)
   y_min <- max(-1.40, floor((point_min - 0.05) * 10) / 10)
 
-  pd <- sex_df %>%
-    dplyr::filter(Variable %in% var_order) %>%
-    dplyr::mutate(
-      Variable = factor(Variable, levels = var_order),
-      Epoch = factor(Epoch, levels = epoch_levels),
-      Group = factor(Group, levels = groups),
-      epoch_idx = as.numeric(Epoch)
-    )
+  prep <- reliability_panel_data(sex_df, vars, y_min, offset_step)
+  var_order <- prep$var_order
+  pd <- prep$pd
+  pd$Group <- factor(pd$Group, levels = groups)
 
-  n_vars <- length(var_order)
-  offsets <- (seq_len(n_vars) - (n_vars + 1) / 2) * offset_step
-  pd$x_pos <- pd$epoch_idx + offsets[as.integer(pd$Variable)]
-  pd$ICC3k_lo_clip <- pmax(pd$ICC3k_lo, y_min)
-  pd$ICC3k_hi_clip <- pmin(pd$ICC3k_hi, 1.0)
-
-  style <- all_rel_styles[match(var_order, all_rel_styles$Variable), ]
-  color_values <- setNames(style$color, var_order)
-  shape_values <- setNames(style$shape, var_order)
-  lty_values   <- setNames(style$linetype, var_order)
   display_labels <- fig_display_label(var_order)
   display_labels[display_labels == "mean MCAv"] <- "Mean MCAv"
   legend_labels <- setNames(display_labels, var_order)
 
-  x_lim <- c(0.5, 3.5)
-  label_x <- 3.45
-  y_breaks <- reliability_y_breaks(y_min)
-
   group_n <- function(g) {
-    d <- sex_df[sex_df$Group == g & sex_df$Variable == "SBP", , drop = FALSE]
-    n_label(d, "SBP")
+    n_label(sex_df[sex_df$Group == g & sex_df$Variable == "SBP", , drop = FALSE], "SBP")
   }
 
   build_panel <- function(stat, group, show_x_axis, show_y_title, show_band_labels, panel_title) {
-    df_panel <- pd[pd$Group == group, , drop = FALSE]
-    p <- ggplot(df_panel, aes(x = x_pos, y = .data[[stat]], color = Variable, shape = Variable,
-                              linetype = Variable, group = Variable))
+    p <- ggplot(pd[pd$Group == group, , drop = FALSE],
+                aes(x = x_pos, y = .data[[stat]], color = Variable, shape = Variable,
+                    linetype = Variable, group = Variable))
 
-    bands <- reliability_bands(stat, y_min, x_lim[1], x_lim[2], label_x, annot_size)
+    # Only the right-hand column carries the band labels, to avoid repeating
+    # them across all three groups.
+    bands <- reliability_bands(stat, y_min, PANEL_X_LIM[1], PANEL_X_LIM[2], BAND_LABEL_X, annot_size)
     if (!show_band_labels) bands <- bands[1:3]
     for (layer in bands) p <- p + layer
 
@@ -480,29 +491,15 @@ build_fig5_gg <- function(sex_df, vars,
     p <- p +
       geom_line(linewidth = line_width) +
       geom_point(size = point_size, stroke = 0.7) +
-      scale_color_manual(values = color_values, labels = legend_labels, breaks = var_order, name = NULL) +
-      scale_shape_manual(values = shape_values, labels = legend_labels, breaks = var_order, name = NULL) +
-      scale_linetype_manual(values = lty_values, labels = legend_labels, breaks = var_order, name = NULL) +
-      scale_x_continuous(breaks = 1:3, labels = epoch_display, limits = x_lim, expand = expansion(add = c(0, 0))) +
-      scale_y_continuous(breaks = y_breaks, limits = c(y_min, 1.0), expand = expansion(add = c(0, 0))) +
-      coord_cartesian(clip = "off") +
+      reliability_panel_scales(prep, legend_labels, legend_ncol, y_min) +
       labs(
         y = if (show_y_title) (if (stat == "ICC3k") "ICC(3,k)" else "CCC") else NULL,
         title = panel_title
       ) +
-      guides(color = guide_legend(ncol = legend_ncol), shape = guide_legend(ncol = legend_ncol),
-             linetype = guide_legend(ncol = legend_ncol)) +
-      theme_spec
+      theme_spec +
+      panel_axis_theme(show_x_axis)
 
-    if (!show_x_axis) {
-      p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.title.x = element_blank())
-    } else {
-      p <- p + theme(axis.title.x = element_blank())
-    }
-    if (!show_y_title) {
-      p <- p + theme(axis.title.y = element_blank())
-    }
-    p
+    if (show_y_title) p else p + theme(axis.title.y = element_blank())
   }
 
   panels <- list()
@@ -538,27 +535,17 @@ build_fig5_gg <- function(sex_df, vars,
 # Fig1 - CPT time-course (4 x 2 panel grid)
 # ============================================================
 
-fig1_theme <- theme_classic(base_size = 10) +
-  theme(
-    text = element_text(color = COL_TEXT),
-    axis.title.x = element_markdown(size = FIG1_AXIS_TITLE_SIZE, color = COL_TEXT),
-    axis.title.y = element_markdown(size = FIG1_AXIS_TITLE_SIZE, color = COL_TEXT, angle = 90),
-    axis.text = element_text(size = FIG1_AXIS_TEXT_SIZE, color = COL_TEXT),
-    axis.line = element_line(linewidth = 0.5, color = COL_TEXT),
-    axis.ticks = element_line(linewidth = 0.4, color = COL_TEXT),
-    plot.title = element_markdown(size = FIG1_TITLE_SIZE, face = "bold", hjust = 0),
-    panel.grid = element_blank(),
-    plot.background = element_rect(fill = "white", color = NA),
-    panel.background = element_rect(fill = "white", color = NA),
-    legend.text = element_text(size = FIG1_AXIS_TEXT_SIZE + 1),
-    legend.title = element_blank(),
-    plot.margin = margin(t = 4, r = 10, b = 4, l = 4)
-  )
+fig1_theme <- fsu_theme(
+  axis_text = FIG1_AXIS_TEXT_SIZE, axis_title = FIG1_AXIS_TITLE_SIZE, title = FIG1_TITLE_SIZE,
+  base_size = 10, line_width = 0.5, tick_width = 0.4,
+  title_element = element_markdown,
+  legend_text = element_text(size = FIG1_AXIS_TEXT_SIZE + 1),
+  margins = c(t = 4, r = 10, b = 4, l = 4)
+)
 
 build_fig1_gg <- function(df, anova_df = NULL, posthoc_df = NULL,
                            theme_spec = fig1_theme, annot_size = FIG1_ANNOT_SIZE,
                            suptitle_size = FIG1_SUPTITLE_SIZE) {
-  epoch_levels <- c("Baseline", "Min 1", "Min 2")
   labels <- fig1_var_label(fig1_vars$ylabel)
   ordered_vars <- fig1_vars[match(bp_first_order(labels), labels), ]
   summary_all <- build_fig1_timecourse_summary(df)
@@ -579,10 +566,10 @@ build_fig1_gg <- function(df, anova_df = NULL, posthoc_df = NULL,
     var <- ordered_vars[i, ]
     label <- fig1_var_label(var$ylabel)
     long <- long_for_var(df, var$var_key, var$stem, delta_baseline = TRUE)
-    long$epoch_idx <- match(long$time, epoch_levels)
+    long$epoch_idx <- match(long$time, EPOCH_LEVELS)
 
     summary_var <- summary_all[summary_all$Variable == label, , drop = FALSE]
-    summary_var$epoch_idx <- match(summary_var$Epoch, epoch_levels)
+    summary_var$epoch_idx <- match(summary_var$Epoch, EPOCH_LEVELS)
     summary_var$offset <- ifelse(summary_var$Visit == "V1", -0.07, 0.07)
     summary_var$x_pos <- summary_var$epoch_idx + summary_var$offset
 
@@ -629,7 +616,7 @@ build_fig1_gg <- function(df, anova_df = NULL, posthoc_df = NULL,
       scale_color_manual(values = c(V1 = COL_V1, V2 = COL_V2), name = NULL) +
       scale_shape_manual(values = c(V1 = 16, V2 = 15), name = NULL) +
       scale_linetype_manual(values = c(V1 = "solid", V2 = "dashed"), name = NULL) +
-      scale_x_continuous(breaks = 1:3, labels = epoch_levels, limits = c(0.6, 3.4), expand = expansion(add = c(0, 0))) +
+      scale_x_continuous(breaks = 1:3, labels = EPOCH_LEVELS, limits = c(0.6, 3.4), expand = expansion(add = c(0, 0))) +
       scale_y_continuous(breaks = yb$breaks, limits = yb$limits, expand = expansion(add = c(0, 0))) +
       coord_cartesian(clip = "off", ylim = c(yb$limits[1], y_top)) +
       annotate("text", x = 3.35, y = y_n, label = paste0("n=", n_subj), hjust = 1, vjust = 1,
@@ -697,20 +684,11 @@ build_fig1_gg <- function(df, anova_df = NULL, posthoc_df = NULL,
 # from 03_reliability_tables.R (sourced before this file).
 # ============================================================
 
-fig23_theme <- theme_classic(base_size = FIG23_AXIS_TEXT_SIZE) +
-  theme(
-    text = element_text(color = COL_TEXT),
-    axis.title.x = element_markdown(size = FIG23_AXIS_TITLE_SIZE, color = COL_TEXT),
-    axis.title.y = element_markdown(size = FIG23_AXIS_TITLE_SIZE, color = COL_TEXT, angle = 90),
-    axis.text = element_text(size = FIG23_AXIS_TEXT_SIZE, color = COL_TEXT),
-    axis.line = element_line(linewidth = 0.4, color = COL_TEXT),
-    axis.ticks = element_line(linewidth = 0.35, color = COL_TEXT),
-    plot.title = element_text(size = FIG23_TITLE_SIZE, face = "bold", hjust = 0.5),
-    panel.grid = element_blank(),
-    plot.background = element_rect(fill = "white", color = NA),
-    panel.background = element_rect(fill = "white", color = NA),
-    plot.margin = margin(t = 8, r = 6, b = 4, l = 4)
-  )
+fig23_theme <- fsu_theme(
+  axis_text = FIG23_AXIS_TEXT_SIZE, axis_title = FIG23_AXIS_TITLE_SIZE, title = FIG23_TITLE_SIZE,
+  line_width = 0.4, tick_width = 0.35, title_hjust = 0.5,
+  margins = c(t = 8, r = 6, b = 4, l = 4)
+)
 
 # Mirrors Python's ba_line_values(): bias and limits-of-agreement lines
 # evaluated at x, using the same bias/heteroscedasticity model ba_stats() picked.
