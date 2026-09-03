@@ -9,7 +9,7 @@ AU  - Crandall, Craig G.
 AU  - Watso, Joseph C.
 T2  - American Journal of Physiology-Heart and Circulatory Physiology
 PY  - 2026
-N1  - Manuscript under review.
+N1  - Accepted for publication.
 LA  - eng
 ER  - 
 
@@ -17,10 +17,9 @@ TY  - COMP
 TI  - TCD Reproducibility Analysis
 AU  - Hoch, Jonathan W.
 PY  - 2026
-DA  - 2026/06/17/
+DA  - 2026/09/03/
 ET  - 1.0.0
-DO  - 10.5281/zenodo.20747866
-UR  - https://github.com/FSUcaplab/tcd-reproducibility
+UR  - https://github.com/Jonathan-Hoch/tcd-reproducibility
 AB  - Reproducible analysis code and generated manuscript-ready outputs for evaluating between-visit reproducibility of cerebrovascular and cardiovascular responses during the cold pressor test.
 KW  - cerebrovascular reactivity
 KW  - cardiovascular reactivity

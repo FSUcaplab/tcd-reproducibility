@@ -7,19 +7,11 @@ authors:
     given-names: "Jonathan W."
     orcid: "https://orcid.org/0000-0002-4992-1199"
     affiliation: "Cardiovascular and Applied Physiology Laboratory, Florida State University"
-repository-code: "https://github.com/FSUcaplab/tcd-reproducibility"
-url: "https://github.com/FSUcaplab/tcd-reproducibility"
+repository-code: "https://github.com/Jonathan-Hoch/tcd-reproducibility"
+url: "https://github.com/Jonathan-Hoch/tcd-reproducibility"
 license: MIT
 version: 1.0.0
-date-released: 2026-06-17
-doi: "10.5281/zenodo.20747866"
-identifiers:
-  - type: doi
-    value: "10.5281/zenodo.20747866"
-    description: "Concept DOI -- always resolves to the latest archived version. Cite this one."
-  - type: doi
-    value: "10.5281/zenodo.20747867"
-    description: "Version DOI -- the archived v1.0.0 snapshot."
+date-released: 2026-09-03
 abstract: >-
   Reproducible analysis code and generated manuscript-ready outputs for
   evaluating between-visit reproducibility of cerebrovascular and
@@ -54,4 +46,4 @@ preferred-citation:
       orcid: "https://orcid.org/0000-0001-7840-0643"
   journal: "American Journal of Physiology-Heart and Circulatory Physiology"
   year: 2026
-  notes: "Manuscript under review."
+  notes: "Accepted for publication."
