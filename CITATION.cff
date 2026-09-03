@@ -12,6 +12,14 @@ url: "https://github.com/Jonathan-Hoch/tcd-reproducibility"
 license: MIT
 version: 1.0.0
 date-released: 2026-09-03
+doi: "10.5281/zenodo.22280462"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22280462"
+    description: "Concept DOI -- always resolves to the latest archived version. Cite this one."
+  - type: doi
+    value: "10.5281/zenodo.22280463"
+    description: "Version DOI -- the archived v1 snapshot."
 abstract: >-
   Reproducible analysis code and generated manuscript-ready outputs for
   evaluating between-visit reproducibility of cerebrovascular and

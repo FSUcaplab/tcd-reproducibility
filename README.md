@@ -1,5 +1,7 @@
 # TCD Reproducibility Analysis
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22280462.svg)](https://doi.org/10.5281/zenodo.22280462)
+
 Analysis code for the between-visit reproducibility of cerebrovascular and
 cardiovascular responses to the cold pressor test (CPT).
 
