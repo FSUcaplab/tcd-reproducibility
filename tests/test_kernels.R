@@ -48,9 +48,21 @@ plain <- data.frame(v1 = c(10, 12, 14, 16, 18, 20, 22, 24),
 plain_ba <- ba_stats(plain)
 check_equal("constant spread gives standard limits", plain_ba$LoA_type, "standard")
 check_near("standard limits are mean diff +/- 1.96 SD",
-           plain_ba$LoA_hi, plain_ba$Mean_diff + 1.96 * plain_ba$SD_diff)
+           plain_ba$LoA_hi, plain_ba$Mean_diff + LOA_MULT_STANDARD * plain_ba$SD_diff)
 check_near("limits are symmetric about the mean difference",
            (plain_ba$LoA_lo + plain_ba$LoA_hi) / 2, plain_ba$Mean_diff)
+
+# Heteroscedastic fan limits are based on fitted absolute residuals. Convert
+# that mean absolute residual scale to SD before applying 95% limits.
+fan_mean <- rep(seq_len(10), each = 2)
+fan_diff <- as.vector(rbind(-seq_len(10), seq_len(10)))
+fan <- data.frame(v1 = fan_mean + fan_diff / 2,
+                  v2 = fan_mean - fan_diff / 2)
+fan_ba <- ba_stats(fan)
+check_equal("mean-dependent spread gives fan limits", fan_ba$LoA_type, "fan")
+check_near("fan limits use the absolute-residual multiplier",
+           (fan_ba$LoA_hi - fan_ba$LoA_lo) / 2,
+           LOA_MULT_FAN * mean(fan_mean))
 
 # Difference grows steadily with the mean -> proportional bias detected.
 sloped <- data.frame(v1 = seq(10, 40, by = 2),

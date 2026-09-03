@@ -720,7 +720,8 @@ ba_line_values_r <- function(dp, x) {
     sd_line <- rep(stats::sd(resid) * sqrt((n - 1) / (n - 2)), length(x))
   }
 
-  list(bias = bias, loa_lo = bias - 1.96 * sd_line, loa_hi = bias + 1.96 * sd_line)
+  loa_mult <- if (grepl("fan", b$LoA_type)) LOA_MULT_FAN else LOA_MULT_STANDARD
+  list(bias = bias, loa_lo = bias - loa_mult * sd_line, loa_hi = bias + loa_mult * sd_line)
 }
 
 # One Bland-Altman panel: scatter of (mean, V1-V2), bias line (garnet) and

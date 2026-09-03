@@ -230,8 +230,11 @@ spearman_scipy <- function(x, y) {
   )
 }
 
-# Multiplier turning a standard deviation into 95% limits of agreement.
-LOA_MULT <- 1.96
+# Multipliers turning a spread estimate into 95% limits of agreement. The fan
+# branch fits absolute residuals, so convert mean absolute residual to SD under
+# normality before applying the usual 1.96 multiplier.
+LOA_MULT_STANDARD <- 1.96
+LOA_MULT_FAN <- LOA_MULT_STANDARD * sqrt(pi / 2)
 
 # Bland-Altman statistics. The limits of agreement adapt to the data:
 #   standard        - constant bias, constant spread
@@ -279,13 +282,15 @@ ba_stats <- function(dp) {
     loa_type <- "standard"
   }
 
+  loa_mult <- if (use_hs) LOA_MULT_FAN else LOA_MULT_STANDARD
+
   list(
     n           = n,
     Mean_diff   = as.numeric(md),
     SD_diff     = as.numeric(sd_diff),
     LoA_type    = loa_type,
-    LoA_lo      = as.numeric(mid - LOA_MULT * sd_mid),
-    LoA_hi      = as.numeric(mid + LOA_MULT * sd_mid),
+    LoA_lo      = as.numeric(mid - loa_mult * sd_mid),
+    LoA_hi      = as.numeric(mid + loa_mult * sd_mid),
     Prop_bias_r = as.numeric(pb$r),
     Prop_bias_P = as.numeric(pb$p),
     Hetero_rho  = as.numeric(hs$rho),
